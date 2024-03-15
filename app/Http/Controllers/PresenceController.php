@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Validator;
 
 class PresenceController extends Controller
 {
+    private $officeLatitude = -7.874703;
+    private $officeLongitude = 112.524122;
+
     public function recordCheckIn(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -22,11 +25,9 @@ class PresenceController extends Controller
 
         $user = Auth::user();
         $now = now()->addHours(7);
-        $officeLatitude = -7.874703;
-        $officeLongitude = 112.524122;
         $allowedRadius = 5;
 
-        $distance = $this->calculateDistance($request->latitude, $request->longitude, $officeLatitude, $officeLongitude);
+        $distance = $this->calculateDistance($request->latitude, $request->longitude, $this->officeLatitude, $this->officeLongitude);
 
         if ($distance > $allowedRadius) {
             return response()->json([
@@ -86,6 +87,21 @@ class PresenceController extends Controller
                 ], 400);
             }
         }
+    }
+
+    public function userDistance(Request $request)
+    {
+        $distance = $this->calculateDistance($request->latitude, $request->longitude, $this->officeLatitude, $this->officeLongitude);
+
+        if ($distance >= 1000) {
+            $formattedDistance = number_format($distance / 1000, 1) . " km";
+        } else {
+            $formattedDistance = number_format($distance, 2) . " m";
+        }
+
+        return response()->json([
+            'data' => $formattedDistance,
+        ]);
     }
 
     private function calculateDistance($latitude1, $longitude1, $latitude2, $longitude2)
