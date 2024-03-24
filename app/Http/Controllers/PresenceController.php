@@ -25,7 +25,7 @@ class PresenceController extends Controller
 
         $user = Auth::user();
         $now = now()->addHours(7);
-        $allowedRadius = 5;
+        $allowedRadius = 10;
 
         $distance = $this->calculateDistance($request->latitude, $request->longitude, $this->officeLatitude, $this->officeLongitude);
 
