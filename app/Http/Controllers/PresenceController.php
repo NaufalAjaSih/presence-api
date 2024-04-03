@@ -3,14 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Presence;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class PresenceController extends Controller
 {
-    private $officeLatitude = -7.874703;
-    private $officeLongitude = 112.524122;
+    private $officeLatitude = 37.785834;
+    private $officeLongitude = -122.406417;
 
     public function recordCheckIn(Request $request)
     {
@@ -101,6 +102,39 @@ class PresenceController extends Controller
 
         return response()->json([
             'data' => $formattedDistance,
+        ]);
+    }
+
+    public function getToday()
+    {
+        $user = Auth::user();
+
+        $today = Carbon::now()->toDateString();
+
+        $weekly = Presence::where('user_id', $user->id)
+            ->whereDate('created_at', $today)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json([
+            'data' => $weekly
+        ]);
+    }
+
+    public function getWeekly(Request $request)
+    {
+        $user = Auth::user();
+        $startDate = Carbon::now()->subDays(7);
+        $endDate = Carbon::now();
+
+        $weekly = Presence::where('user_id', $user->id)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->orderByDesc('created_at')
+            ->get();
+
+
+        return response()->json([
+            'data' => $weekly
         ]);
     }
 
