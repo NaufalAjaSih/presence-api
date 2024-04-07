@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Leave;
 use App\Models\Presence;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -24,8 +25,7 @@ class PresenceController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $user = Auth::user();
-        $now = now()->addHours(7);
+        $now = now();
         $allowedRadius = 10;
 
         $distance = $this->calculateDistance($request->latitude, $request->longitude, $this->officeLatitude, $this->officeLongitude);
@@ -36,13 +36,25 @@ class PresenceController extends Controller
             ], 400);
         }
 
-        $presence = Presence::where('user_id', $user->id)->where('date', $now->format('Y-m-d'))->first();
+        $leave = Leave::where('user_id', Auth::id())
+            ->whereDate('start_date', '<=', $now)
+            ->whereDate('end_date', '>=', $now)
+            ->where('status', 'approved')
+            ->first();
+
+        if ($leave) {
+            return response()->json([
+                'message' => 'Anda memiliki izin pada tanggal yang bersangkutan. Tidak dapat melakukan check-in atau check-out.'
+            ], 400);
+        }
+
+        $presence = Presence::where('user_id', Auth::id())->where('date', $now->format('Y-m-d'))->first();
 
         if (!$presence) {
             $presence = Presence::create([
-                'user_id' => $user->id,
-                'date' => now()->addHours(7)->format('Y-m-d'),
-                'check_in' => now()->addHours(7)->format('H:i:s'),
+                'user_id' => Auth::id(),
+                'date' => now()->format('Y-m-d'),
+                'check_in' => now()->format('H:i:s'),
                 'description' => $request->description,
                 'latitude' => $request->latitude,
                 'longitude' => $request->longitude,
@@ -107,11 +119,9 @@ class PresenceController extends Controller
 
     public function getToday()
     {
-        $user = Auth::user();
-
         $today = Carbon::now()->toDateString();
 
-        $weekly = Presence::where('user_id', $user->id)
+        $weekly = Presence::where('user_id', Auth::id())
             ->whereDate('created_at', $today)
             ->orderByDesc('created_at')
             ->get();
@@ -123,11 +133,10 @@ class PresenceController extends Controller
 
     public function getWeekly(Request $request)
     {
-        $user = Auth::user();
         $startDate = Carbon::now()->subDays(7);
         $endDate = Carbon::now();
 
-        $weekly = Presence::where('user_id', $user->id)
+        $weekly = Presence::where('user_id', Auth::id())
             ->whereBetween('created_at', [$startDate, $endDate])
             ->orderByDesc('created_at')
             ->get();

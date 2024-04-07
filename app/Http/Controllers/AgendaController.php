@@ -9,18 +9,23 @@ class AgendaController extends Controller
 {
     public function getByDate(Request $request)
     {
-        $date = $request->get('date');
+        $agendas = Agenda::all();
 
-        $agendas = Agenda::where('date', $date)->get();
-
-        if (!$agendas) {
+        if ($agendas->isEmpty()) {
             return response()->json([
                 'message' => 'Agenda not found',
             ], 404);
         }
-        
+
+        // Membuat array untuk menyimpan agendanya berdasarkan tanggal
+        $response = [];
+
+        foreach ($agendas as $agenda) {
+            $response[$agenda->date][] = $agenda;
+        }
+
         return response()->json([
-            'data' => $agendas,
+            'data' => $response
         ]);
     }
 }
