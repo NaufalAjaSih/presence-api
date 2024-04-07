@@ -13,6 +13,8 @@ Route::post('/checkin', [PresenceController::class, 'recordCheckIn'])->middlewar
 
 Route::get('/get-weekly', [PresenceController::class, 'getWeekly'])->middleware('auth:sanctum');
 Route::get('/get-today', [PresenceController::class, 'getToday'])->middleware('auth:sanctum');
+Route::get('/get-monthly', [PresenceController::class, 'getMonthly'])->middleware('auth:sanctum');
+
 
 Route::get('/distance', [PresenceController::class, 'userDistance'])->middleware('auth:sanctum');
 Route::get('/agenda', [AgendaController::class, 'getByDate'])->middleware('auth:sanctum');

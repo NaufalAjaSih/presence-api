@@ -102,6 +102,43 @@ class PresenceController extends Controller
         }
     }
 
+    public function getMonthly()
+    {
+        $startDate = Carbon::now()->startOfMonth();
+        $endDate = Carbon::now()->endOfMonth();
+
+        $attendanceData = [];
+
+        for ($date = $startDate; $date->lte($endDate); $date->addDay()) {
+            // Ambil data presensi
+            $presence = Presence::where('user_id', Auth::id())
+                ->whereDate('date', $date)
+                ->first();
+
+            $leave = Leave::where('user_id', Auth::id())
+                ->whereDate('start_date', '<=', $date)
+                ->whereDate('end_date', '>=', $date)
+                ->where('status', 'approved')
+                ->first();
+
+            if ($leave) {
+                $status = $leave->type;
+            } elseif ($presence) {
+                $status = $presence->attendance_status;
+            } else {
+                $status = '';
+            }
+
+            $attendanceData[] = [
+                'tanggal' => $date->toDateString(),
+                'status' => $status,
+            ];
+        }
+
+        return response()->json($attendanceData);
+    }
+
+
     public function userDistance(Request $request)
     {
         $distance = $this->calculateDistance($request->latitude, $request->longitude, $this->officeLatitude, $this->officeLongitude);
